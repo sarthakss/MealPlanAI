@@ -10,45 +10,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Utensils, Users, Edit2, Save } from "lucide-react";
-
-interface Ingredient {
-  name: string;
-  amount: string;
-  unit: string;
-}
-
-interface Step {
-  number: number;
-  instruction: string;
-}
-
-interface NutritionInfo {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
+import { Clock, Utensils, Users, Edit2, Save, ArrowLeft, Calendar, BookOpen, Trash2 } from "lucide-react";
+import { Recipe } from "@/types/recipe";
+import { mockAPI } from "@/lib/api";
 
 interface RecipePreviewProps {
-  recipe?: {
-    name: string;
-    description: string;
-    ingredients: Ingredient[];
-    steps: Step[];
-    prepTime: number;
-    cookTime: number;
-    servings: number;
-    nutrition: NutritionInfo;
-    tags: string[];
-    imageUrl?: string;
-  };
+  recipe?: Recipe;
+  context?: 'home' | 'cookbook' | 'meal-planner';
   onEdit?: () => void;
   onSave?: () => void;
+  onAddToMealPlanner?: () => void;
+  onBack?: () => void;
+  onDelete?: () => void;
+  showFullDetails?: boolean;
+  isSaving?: boolean;
+  isAddingToMealPlanner?: boolean;
+  isDeleting?: boolean;
 }
 
 const RecipePreview = ({
-  recipe = {
+  recipe = mockAPI.createMockRecipe({
     name: "Chicken Parmesan",
     description:
       "Classic Italian-American dish with breaded chicken cutlets, tomato sauce, and melted cheese.",
@@ -119,9 +100,17 @@ const RecipePreview = ({
     tags: ["Italian", "Dinner", "Chicken", "Baked"],
     imageUrl:
       "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=600&q=80",
-  },
+  }),
+  context = 'cookbook',
   onEdit = () => {},
   onSave = () => {},
+  onAddToMealPlanner = () => {},
+  onBack = () => {},
+  onDelete = () => {},
+  showFullDetails = true,
+  isSaving = false,
+  isAddingToMealPlanner = false,
+  isDeleting = false,
 }: RecipePreviewProps) => {
   return (
     <Card className="w-full max-w-4xl mx-auto bg-card">
@@ -211,38 +200,116 @@ const RecipePreview = ({
 
         <Separator />
 
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Nutrition Information</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-3 bg-muted rounded-md text-center">
-              <p className="text-sm font-medium">Calories</p>
-              <p className="text-lg">{recipe.nutrition.calories}</p>
-            </div>
-            <div className="p-3 bg-muted rounded-md text-center">
-              <p className="text-sm font-medium">Protein</p>
-              <p className="text-lg">{recipe.nutrition.protein}g</p>
-            </div>
-            <div className="p-3 bg-muted rounded-md text-center">
-              <p className="text-sm font-medium">Carbs</p>
-              <p className="text-lg">{recipe.nutrition.carbs}g</p>
-            </div>
-            <div className="p-3 bg-muted rounded-md text-center">
-              <p className="text-sm font-medium">Fat</p>
-              <p className="text-lg">{recipe.nutrition.fat}g</p>
+        {recipe.nutrition && (
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Nutrition Information</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-3 bg-muted rounded-md text-center">
+                <p className="text-sm font-medium">Calories</p>
+                <p className="text-lg">{recipe.nutrition.calories}</p>
+              </div>
+              <div className="p-3 bg-muted rounded-md text-center">
+                <p className="text-sm font-medium">Protein</p>
+                <p className="text-lg">{recipe.nutrition.protein}g</p>
+              </div>
+              <div className="p-3 bg-muted rounded-md text-center">
+                <p className="text-sm font-medium">Carbs</p>
+                <p className="text-lg">{recipe.nutrition.carbs}g</p>
+              </div>
+              <div className="p-3 bg-muted rounded-md text-center">
+                <p className="text-sm font-medium">Fat</p>
+                <p className="text-lg">{recipe.nutrition.fat}g</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </CardContent>
 
-      <CardFooter className="flex justify-end gap-4">
-        <Button variant="outline" onClick={onEdit}>
-          <Edit2 className="mr-2 h-4 w-4" />
-          Edit Recipe
-        </Button>
-        <Button onClick={onSave}>
-          <Save className="mr-2 h-4 w-4" />
-          Save Recipe
-        </Button>
+      <CardFooter className="flex flex-col sm:flex-row justify-between gap-4">
+        {onBack && (
+          <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        )}
+        
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto sm:ml-auto">
+          {context === 'home' && (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={onSave} 
+                className="w-full sm:w-auto"
+                disabled={isSaving || isAddingToMealPlanner}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {isSaving ? 'Saving...' : 'Save to Cookbook'}
+                </span>
+                <span className="sm:hidden">
+                  {isSaving ? 'Saving...' : 'Save'}
+                </span>
+              </Button>
+              <Button 
+                onClick={onAddToMealPlanner} 
+                className="w-full sm:w-auto"
+                disabled={isSaving || isAddingToMealPlanner}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {isAddingToMealPlanner ? 'Adding...' : 'Add to Meal Planner'}
+                </span>
+                <span className="sm:hidden">
+                  {isAddingToMealPlanner ? 'Adding...' : 'Add to Plan'}
+                </span>
+              </Button>
+            </>
+          )}
+          
+          {context === 'cookbook' && (
+            <>
+              <Button variant="outline" onClick={onEdit} className="w-full sm:w-auto">
+                <Edit2 className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Edit Recipe</span>
+                <span className="sm:hidden">Edit</span>
+              </Button>
+              <Button onClick={onAddToMealPlanner} className="w-full sm:w-auto">
+                <Calendar className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Add to Meal Planner</span>
+                <span className="sm:hidden">Add to Plan</span>
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={onDelete} 
+                className="w-full sm:w-auto"
+                disabled={isDeleting}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {isDeleting ? 'Deleting...' : 'Delete Recipe'}
+                </span>
+                <span className="sm:hidden">
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </span>
+              </Button>
+            </>
+          )}
+          
+          {context === 'meal-planner' && (
+            <>
+              <Button variant="outline" onClick={onEdit} className="w-full sm:w-auto">
+                <Edit2 className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Edit Recipe</span>
+                <span className="sm:hidden">Edit</span>
+              </Button>
+              <Button onClick={onSave} className="w-full sm:w-auto">
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">View in Cookbook</span>
+                <span className="sm:hidden">View</span>
+              </Button>
+            </>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
